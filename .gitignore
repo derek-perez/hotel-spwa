@@ -1,0 +1,14 @@
+# Claude Code local settings/config (personal, not part of the app)
+.claude/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Node (in case tooling is added later)
+node_modules/
+npm-debug.log*

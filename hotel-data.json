@@ -1,0 +1,149 @@
+{
+  "hotel_info": {
+    "name": "Hotel Posada Cocomacan",
+    "address": {
+      "street": "Principal 4, Centro",
+      "city": "Dolores Hidalgo Cuna de la Independencia Nacional",
+      "state": "Guanajuato",
+      "zip_code": "37800",
+      "full_address": "Principal 4, Centro, 37800 Dolores Hidalgo Cuna de la Independencia Nacional, Gto."
+    },
+    "contact": {
+      "whatsapp_number": "524183357375",
+      "whatsapp_display": "418 335 7375"
+    },
+    "policies": {
+      "check_in": "1:00 PM",
+      "check_out": "12:00 PM",
+      "pet_friendly": false
+    },
+    "media": {
+      "hero_image": "public/images/central_courtyard.jpg",
+      "location_image": "public/images/outside_view.jpg",
+      "amenities_gallery": [
+        "public/images/central_courtyard.jpg",
+        "public/images/rooftop_terrace_1.jpg",
+        "public/images/lobby.jpg",
+        "public/images/reception.jpg"
+      ]
+    },
+    "slogan": "Descanso, confort y tradición en el corazón de la Cuna de la Independencia Nacional"
+  },
+  "general_amenities": [
+    {
+      "id": "wifi",
+      "name": "Wi-Fi Gratuito",
+      "description": "Conexión de alta velocidad en habitaciones y áreas comunes.",
+      "icon": "wifi"
+    },
+    {
+      "id": "parking",
+      "name": "Estacionamiento Incluido",
+      "description": "Estacionamiento seguro incluido sin costo adicional en tu estancia.",
+      "icon": "car"
+    },
+    {
+      "id": "reception_24_7",
+      "name": "Recepción 24/7",
+      "description": "Atención continua durante toda tu estancia.",
+      "icon": "concierge-bell"
+    },
+    {
+      "id": "courtyard_cafe",
+      "name": "Patio Central y Cafetería",
+      "description": "Hermoso patio central con cafetería independiente para disfrutar tu mañana.",
+      "icon": "coffee"
+    },
+    {
+      "id": "terrace",
+      "name": "Terraza",
+      "description": "Área de descanso al aire libre.",
+      "icon": "sun"
+    }
+  ],
+  "room_types": [
+    {
+      "id": "single_room",
+      "name": "Habitación Sencilla",
+      "capacity": "1 - 2 Personas",
+      "beds": "1 Cama King Size",
+      "rates": [
+        { "guests": 1, "price_mxn": 700 },
+        { "guests": 2, "price_mxn": 900 }
+      ],
+      "common_features": ["Wi-Fi", "Agua caliente", "Baño privado con regadera", "TV con cable", "Servicio de limpieza daily"],
+      "image": "public/images/single_bed_bedrrom_1.jpg",
+      "gallery": ["public/images/single_bed_bedrrom_1.jpg", "public/images/single_bed_bedrrom_2.jpg"]
+    },
+    {
+      "id": "double_room",
+      "name": "Habitación Doble",
+      "capacity": "3 - 4 Personas",
+      "beds": "2 Camas Matrimoniales",
+      "rates": [
+        { "guests": "3-4", "price_mxn": 1200 }
+      ],
+      "common_features": ["Wi-Fi", "Agua caliente", "Baño privado con regadera", "TV con cable", "Servicio de limpieza daily"],
+      "image": "public/images/double_bed_bedrrom_1.jpg",
+      "gallery": ["public/images/double_bed_bedrrom_1.jpg", "public/images/double_bed_bedrrom_2.jpg", "public/images/double_bed_bedrrom_3.jpg"]
+    },
+    {
+      "id": "triple_room",
+      "name": "Habitación Triple",
+      "capacity": "5 - 6 Personas",
+      "beds": "3 Camas Matrimoniales O 2 Matrimoniales + 1 King Size",
+      "total_units": 3,
+      "rates": [
+        { "guests": "5-6", "price_mxn": 1400 }
+      ],
+      "common_features": ["Wi-Fi", "Agua caliente", "Baño privado con regadera", "TV con cable", "Servicio de limpieza daily"],
+      "image": "public/images/double_bed_bedrrom_3.jpg",
+      "gallery": ["public/images/double_bed_bedrrom_3.jpg"]
+    },
+    {
+      "id": "suite_junior",
+      "name": "Suite Junior",
+      "capacity": "1 - 2 Personas",
+      "beds": "1 Cama King Size",
+      "rates": [
+        { "guests": "1-2", "price_mxn": "Consultar cotización" }
+      ],
+      "common_features": ["Espacio superior", "Wi-Fi", "Agua caliente", "Baño privado con regadera", "TV con cable", "Servicio de limpieza daily"],
+      "image": "public/images/suite_entrance.jpg",
+      "gallery": ["public/images/suite_entrance.jpg", "public/images/suite_restrrom.jpg"]
+    },
+    {
+      "id": "suite_benito_juarez",
+      "name": "Suite Benito Juárez",
+      "capacity": "1 - 2 Personas",
+      "beds": "1 Cama King Size",
+      "description": "La suite más amplia y exclusiva del hotel.",
+      "rates": [
+        { "guests": "1-2", "price_mxn": "Consultar cotización" }
+      ],
+      "common_features": ["Vista / Espacio premium", "Wi-Fi", "Agua caliente", "Baño privado con regadera", "TV con cable", "Servicio de limpieza daily"],
+      "image": "public/images/suite_bed.jpg",
+      "gallery": ["public/images/suite_bed.jpg", "public/images/suite_bathroom.jpg", "public/images/suite_image_1.jpg"]
+    }
+  ],
+  "location_highlights": [
+    {
+      "title": "Jardín Principal y Parroquia",
+      "distance": "A unos pasos",
+      "description": "Ubicación privilegiada en el corazón histórico de Dolores Hidalgo.",
+      "icon": "church"
+    },
+    {
+      "title": "Museos del Centro",
+      "distance": "Caminando",
+      "description": "Cerca de los principales acervos históricos de la Cuna de la Independencia.",
+      "icon": "landmark"
+    },
+    {
+      "title": "Parada de Turibus",
+      "distance": "Inmediata",
+      "description": "Acceso rápido a recorridos turísticos locales.",
+      "icon": "bus"
+    }
+  ]
+}

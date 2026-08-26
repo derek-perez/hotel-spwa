@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Hotel Posada Cocomacan | Dolores Hidalgo, Guanajuato</title>
+  <meta name="description" content="Hotel Posada Cocomacan — Hospedaje colonial en el corazón de Dolores Hidalgo, Cuna de la Independencia Nacional. Reserva por WhatsApp." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            terracota: { DEFAULT: '#B75A38', dark: '#9A4A2C', light: '#D98B62' },
+            arena: { DEFAULT: '#F3E9DA', light: '#FBF6EE', dark: '#E4D3B8' },
+            oliva: { DEFAULT: '#6B7A4F', dark: '#4F5B3A', light: '#8B9A6B' },
+            dorado: { DEFAULT: '#9C7A2E', light: '#C9A24B' },
+            carbon: { DEFAULT: '#2B2420', soft: '#4A3F37' },
+          },
+          fontFamily: {
+            display: ['"Playfair Display"', 'serif'],
+            body: ['Inter', 'sans-serif'],
+          },
+          boxShadow: {
+            warm: '0 10px 40px -10px rgba(43, 36, 32, 0.35)',
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="font-body bg-arena-light text-carbon antialiased">
+
+  <!-- ============ HEADER / NAVBAR ============ -->
+  <header id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+    <nav class="max-w-7xl mx-auto flex items-center justify-between px-5 sm:px-8 py-4">
+      <a href="#inicio" class="flex items-center gap-2 group">
+        <span class="flex items-center justify-center w-10 h-10 rounded-full bg-terracota text-arena-light shadow-warm">
+          <i data-lucide="landmark" class="w-5 h-5"></i>
+        </span>
+        <span class="font-display font-bold text-lg sm:text-xl leading-tight navbar-text transition-colors">
+          Posada Cocomacan
+        </span>
+      </a>
+
+      <ul class="hidden md:flex items-center gap-8 font-medium navbar-text transition-colors">
+        <li><a href="#habitaciones" class="nav-link">Habitaciones</a></li>
+        <li><a href="#amenidades" class="nav-link">Amenidades</a></li>
+        <li><a href="#ubicacion" class="nav-link">Ubicación</a></li>
+        <li><a href="#contacto" class="nav-link">Contacto</a></li>
+      </ul>
+
+      <div class="flex items-center gap-3">
+        <a href="#reserva-rapida"
+          class="hidden sm:inline-flex items-center gap-2 bg-terracota hover:bg-terracota-dark text-white font-semibold px-5 py-2.5 rounded-full shadow-warm transition-all hover:scale-[1.03] active:scale-95">
+          <i data-lucide="calendar-check" class="w-4 h-4"></i>
+          Reservar Ahora
+        </a>
+        <button id="menu-toggle" aria-label="Abrir menú" aria-expanded="false"
+          class="md:hidden flex items-center justify-center w-10 h-10 rounded-full navbar-text transition-colors">
+          <i data-lucide="menu" class="w-6 h-6" id="menu-icon-open"></i>
+          <i data-lucide="x" class="w-6 h-6 hidden" id="menu-icon-close"></i>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Mobile menu -->
+    <div id="mobile-menu" class="md:hidden max-h-0 overflow-hidden transition-all duration-300 ease-in-out bg-arena-light/98 backdrop-blur-md border-t border-terracota/10">
+      <ul class="flex flex-col gap-1 px-6 py-4 font-medium text-carbon">
+        <li><a href="#habitaciones" class="mobile-nav-link">Habitaciones</a></li>
+        <li><a href="#amenidades" class="mobile-nav-link">Amenidades</a></li>
+        <li><a href="#ubicacion" class="mobile-nav-link">Ubicación</a></li>
+        <li><a href="#contacto" class="mobile-nav-link">Contacto</a></li>
+        <li class="pt-2">
+          <a href="#reserva-rapida" class="mobile-nav-link flex items-center justify-center gap-2 bg-terracota text-white font-semibold px-5 py-3 rounded-full">
+            <i data-lucide="calendar-check" class="w-4 h-4"></i> Reservar Ahora
+          </a>
+        </li>
+      </ul>
+    </div>
+  </header>
+
+  <!-- ============ HERO SECTION ============ -->
+  <section id="inicio" class="relative overflow-hidden pt-28 pb-16 md:pt-36 md:pb-20 lg:min-h-[100svh] lg:flex lg:items-center lg:pt-32 lg:pb-16">
+    <div class="absolute inset-0">
+      <img id="hero-image" src="public/images/central_courtyard.jpg" alt="Patio central del Hotel Posada Cocomacan"
+        class="w-full h-full object-cover" />
+      <div class="absolute inset-0 bg-gradient-to-t from-carbon via-carbon/70 to-carbon/30"></div>
+      <div class="absolute inset-0 bg-carbon/20"></div>
+    </div>
+
+    <!--
+      Mobile-first grid: 1 sola columna (orden de lectura: texto -> tarjeta -> botones).
+      Desde lg (>=1024px) se convierte en un grid de 12 columnas / 2 filas:
+        - Columna izquierda (lg:col-span-7): título + descripción (fila 1) y botones (fila 2).
+        - Columna derecha (lg:col-span-5): tarjeta de reserva, ocupando ambas filas y centrada.
+      El posicionamiento explícito (col-start/row-start) reubica los 3 bloques sin depender
+      del orden del DOM, así el orden de lectura en móvil no se ve afectado.
+    -->
+    <div class="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 grid grid-cols-1 gap-10 lg:grid-cols-12 lg:grid-rows-2 lg:gap-x-10 lg:gap-y-8 lg:items-center">
+
+      <!-- 1. Título y descripción -->
+      <div class="lg:col-start-1 lg:col-span-7 lg:row-start-1">
+        <p class="inline-flex items-center gap-2 text-dorado-light/95 font-semibold tracking-widest text-xs sm:text-sm uppercase mb-4 fade-up">
+          <i data-lucide="map-pin" class="w-4 h-4"></i>
+          Dolores Hidalgo, Cuna de la Independencia Nacional
+        </p>
+        <h1 class="font-display font-bold text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-arena-light leading-[1.05] max-w-xl fade-up" style="animation-delay:.1s">
+          Hotel Posada <span class="text-dorado-light">Cocomacan</span>
+        </h1>
+        <p id="hero-slogan" class="mt-5 text-arena/90 text-base sm:text-lg lg:text-xl max-w-xl leading-relaxed fade-up" style="animation-delay:.2s">
+          Descanso, confort y tradición en el corazón de la Cuna de la Independencia Nacional.
+        </p>
+      </div>
+
+      <!-- 2. Tarjeta de Reserva Rápida: ancho completo en móvil; columna derecha fija en desktop -->
+      <div id="reserva-rapida" class="w-full lg:col-start-8 lg:col-span-5 lg:row-start-1 lg:row-span-2 lg:self-center scroll-mt-28">
+        <form id="quick-booking-form" class="bg-white p-5 sm:p-6 rounded-2xl shadow-xl border border-arena-dark/10">
+
+          <div class="flex items-center gap-2 mb-5">
+            <span class="flex items-center justify-center w-9 h-9 rounded-full bg-terracota/10 text-terracota-dark shrink-0">
+              <i data-lucide="calendar-check" class="w-4.5 h-4.5"></i>
+            </span>
+            <h2 class="font-display font-bold text-lg text-carbon">Reserva Rápida</h2>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="booking-field">
+              <label for="checkin" class="booking-label"><i data-lucide="log-in" class="w-3.5 h-3.5"></i> Entrada</label>
+              <input type="date" id="checkin" name="checkin" required class="booking-input" />
+            </div>
+
+            <div class="booking-field">
+              <label for="checkout" class="booking-label"><i data-lucide="log-out" class="w-3.5 h-3.5"></i> Salida</label>
+              <input type="date" id="checkout" name="checkout" required class="booking-input" />
+            </div>
+
+            <div class="booking-field">
+              <label for="room-select" class="booking-label"><i data-lucide="bed-double" class="w-3.5 h-3.5"></i> Habitación</label>
+              <select id="room-select" name="room" class="booking-input">
+                <option value="">Sin preferencia</option>
+              </select>
+            </div>
+
+            <div class="booking-field">
+              <label for="guests" class="booking-label"><i data-lucide="users" class="w-3.5 h-3.5"></i> Huéspedes</label>
+              <select id="guests" name="guests" class="booking-input">
+                <option value="1">1 Persona</option>
+                <option value="2" selected>2 Personas</option>
+                <option value="3">3 Personas</option>
+                <option value="4">4 Personas</option>
+                <option value="5">5 Personas</option>
+                <option value="6">6 Personas</option>
+              </select>
+            </div>
+
+            <button type="submit" class="w-full col-span-1 lg:col-span-2 flex items-center justify-center gap-2 bg-oliva hover:bg-oliva-dark text-white font-semibold py-3.5 mt-1 rounded-xl transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap">
+              <i data-lucide="search" class="w-4 h-4"></i>
+              Consultar Disponibilidad
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 3. Botones secundarios: debajo de la tarjeta en móvil; bajo el texto (columna izquierda) en desktop -->
+      <div class="lg:col-start-1 lg:col-span-7 lg:row-start-2 lg:self-start flex flex-col sm:flex-row gap-3 fade-up" style="animation-delay:.3s">
+        <a href="#reserva-rapida" class="w-full sm:w-auto lg:hidden inline-flex items-center justify-center gap-2 bg-terracota hover:bg-terracota-dark text-white font-semibold px-6 py-3.5 rounded-full shadow-warm transition-all hover:scale-[1.03] active:scale-95">
+          <i data-lucide="calendar-check" class="w-5 h-5"></i>
+          Reservar Ahora
+        </a>
+        <a href="#habitaciones" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-semibold px-6 py-3.5 rounded-full border border-white/25 transition-all hover:scale-[1.03] active:scale-95">
+          <i data-lucide="bed-double" class="w-5 h-5"></i>
+          Ver Habitaciones
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HABITACIONES ============ -->
+  <section id="habitaciones" class="py-20 sm:py-28 px-5 sm:px-8 bg-arena-light scroll-mt-20">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center max-w-2xl mx-auto mb-14">
+        <span class="inline-block text-terracota font-semibold tracking-widest text-xs sm:text-sm uppercase mb-3">Nuestras Habitaciones</span>
+        <h2 class="font-display font-bold text-3xl sm:text-5xl text-carbon leading-tight">Un descanso a la altura de la tradición</h2>
+        <p class="mt-4 text-carbon-soft text-base sm:text-lg">Cada habitación conserva el encanto colonial del centro histórico, con todas las comodidades que necesitas.</p>
+      </div>
+
+      <div id="rooms-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7 sm:gap-8">
+        <!-- Room cards injected dynamically by script.js -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ AMENIDADES ============ -->
+  <section id="amenidades" class="py-20 sm:py-28 px-5 sm:px-8 bg-oliva-dark text-arena-light relative overflow-hidden scroll-mt-20">
+    <div class="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_white_1px,_transparent_0)] [background-size:22px_22px] pointer-events-none"></div>
+
+    <div class="max-w-7xl mx-auto relative">
+      <div class="text-center max-w-2xl mx-auto mb-14">
+        <span class="inline-block text-dorado-light font-semibold tracking-widest text-xs sm:text-sm uppercase mb-3">Amenidades y Servicios</span>
+        <h2 class="font-display font-bold text-3xl sm:text-5xl leading-tight">Todo lo que necesitas, sin salir de casa</h2>
+      </div>
+
+      <div id="amenities-grid" class="grid grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-14">
+        <!-- Amenity cards injected dynamically -->
+      </div>
+
+      <div id="amenities-gallery" class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-14">
+        <!-- Gallery images injected dynamically -->
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-5 max-w-4xl mx-auto">
+        <div class="flex items-start gap-4 bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/10">
+          <div class="flex items-center justify-center w-11 h-11 rounded-full bg-dorado/90 text-carbon shrink-0">
+            <i data-lucide="clock" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-semibold text-lg">Horarios</h3>
+            <p class="text-arena/90 text-sm mt-1">Check-in: <span id="policy-checkin" class="font-medium"></span><br />Check-out: <span id="policy-checkout" class="font-medium"></span></p>
+          </div>
+        </div>
+        <div class="flex items-start gap-4 bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/10">
+          <div class="flex items-center justify-center w-11 h-11 rounded-full bg-dorado/90 text-carbon shrink-0">
+            <i data-lucide="paw-print" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-semibold text-lg">Ambiente libre de mascotas</h3>
+            <p class="text-arena/90 text-sm mt-1">Para el confort de todos nuestros huéspedes, no aceptamos mascotas (No Pet Friendly). ¡Gracias por tu comprensión!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ UBICACIÓN ============ -->
+  <section id="ubicacion" class="py-20 sm:py-28 px-5 sm:px-8 bg-arena scroll-mt-20">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center max-w-2xl mx-auto mb-14">
+        <span class="inline-block text-terracota font-semibold tracking-widest text-xs sm:text-sm uppercase mb-3">Ubicación</span>
+        <h2 class="font-display font-bold text-3xl sm:text-5xl text-carbon leading-tight">En el corazón del centro histórico</h2>
+        <p class="mt-4 text-carbon-soft text-base sm:text-lg" id="location-address">Principal 4, Centro, Dolores Hidalgo Cuna de la Independencia Nacional, Gto.</p>
+      </div>
+
+      <div class="grid lg:grid-cols-2 gap-8 items-stretch">
+        <div class="rounded-3xl overflow-hidden shadow-warm border border-arena-dark/40 min-h-[320px] lg:min-h-[420px]">
+          <iframe
+            id="map-embed"
+            class="w-full h-full min-h-[320px] lg:min-h-[420px]"
+            src=""
+            style="border:0;"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            title="Ubicación de Hotel Posada Cocomacan">
+          </iframe>
+        </div>
+
+        <div class="flex flex-col gap-5">
+          <div class="rounded-3xl overflow-hidden shadow-warm border border-arena-dark/40 h-48 sm:h-56">
+            <img src="public/images/outside_view.jpg" alt="Fachada del Hotel Posada Cocomacan" class="w-full h-full object-cover" />
+          </div>
+          <div id="location-highlights" class="grid sm:grid-cols-1 gap-4">
+            <!-- Location highlight cards injected dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CONTACTO / FOOTER ============ -->
+  <footer id="contacto" class="bg-carbon text-arena/90 pt-16 pb-8 px-5 sm:px-8 scroll-mt-20">
+    <div class="max-w-7xl mx-auto grid sm:grid-cols-2 lg:grid-cols-4 gap-10 pb-10 border-b border-white/10">
+
+      <div class="lg:col-span-1">
+        <a href="#inicio" class="flex items-center gap-2 mb-4">
+          <span class="flex items-center justify-center w-10 h-10 rounded-full bg-terracota text-arena-light">
+            <i data-lucide="landmark" class="w-5 h-5"></i>
+          </span>
+          <span class="font-display font-bold text-lg text-arena-light">Posada Cocomacan</span>
+        </a>
+        <p class="text-sm text-arena/70 leading-relaxed">Hospedaje colonial en el corazón de Dolores Hidalgo, Cuna de la Independencia Nacional.</p>
+      </div>
+
+      <div>
+        <h3 class="font-display font-semibold text-arena-light text-lg mb-4">Contacto</h3>
+        <ul class="space-y-3 text-sm">
+          <li class="flex items-start gap-3">
+            <i data-lucide="map-pin" class="w-4 h-4 mt-0.5 text-dorado-light shrink-0"></i>
+            <span id="footer-address">Principal 4, Centro, Dolores Hidalgo, Gto.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <i data-lucide="message-circle" class="w-4 h-4 mt-0.5 text-dorado-light shrink-0"></i>
+            <a href="#" id="footer-whatsapp" class="hover:text-dorado-light transition-colors">418 335 7375</a>
+          </li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="font-display font-semibold text-arena-light text-lg mb-4">Horarios</h3>
+        <ul class="space-y-3 text-sm">
+          <li class="flex items-center gap-3"><i data-lucide="log-in" class="w-4 h-4 text-dorado-light"></i> Check-in: <span id="footer-checkin" class="font-medium text-arena-light"></span></li>
+          <li class="flex items-center gap-3"><i data-lucide="log-out" class="w-4 h-4 text-dorado-light"></i> Check-out: <span id="footer-checkout" class="font-medium text-arena-light"></span></li>
+          <li class="flex items-center gap-3"><i data-lucide="headset" class="w-4 h-4 text-dorado-light"></i> Recepción 24/7</li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="font-display font-semibold text-arena-light text-lg mb-4">Navegación</h3>
+        <ul class="space-y-3 text-sm">
+          <li><a href="#habitaciones" class="hover:text-dorado-light transition-colors">Habitaciones</a></li>
+          <li><a href="#amenidades" class="hover:text-dorado-light transition-colors">Amenidades</a></li>
+          <li><a href="#ubicacion" class="hover:text-dorado-light transition-colors">Ubicación</a></li>
+          <li><a href="#reserva-rapida" class="hover:text-dorado-light transition-colors">Reservar Ahora</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-arena/60">
+      <p>&copy; <span id="current-year"></span> Hotel Posada Cocomacan. Todos los derechos reservados.</p>
+      <p>Dolores Hidalgo, Guanajuato · México</p>
+    </div>
+  </footer>
+
+  <!-- WhatsApp Floating Button -->
+  <a id="whatsapp-float" href="#" target="_blank" rel="noopener noreferrer"
+    aria-label="Contactar por WhatsApp"
+    class="fixed bottom-5 right-5 z-40 flex items-center justify-center w-14 h-14 rounded-full bg-oliva shadow-warm text-white hover:scale-110 active:scale-95 transition-transform">
+    <i data-lucide="message-circle" class="w-7 h-7"></i>
+  </a>
+
+  <script src="script.js" defer></script>
+</body>
+</html>

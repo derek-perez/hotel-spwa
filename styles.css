@@ -1,0 +1,283 @@
+/* ===================================================================
+   Hotel Posada Cocomacan — Estilos personalizados
+   Paleta: terracota / arena / crema / verde oliva / dorado oscuro
+=================================================================== */
+
+:root {
+  --terracota: #B75A38;
+  --terracota-dark: #9A4A2C;
+  --oliva: #6B7A4F;
+  --oliva-dark: #4F5B3A;
+  --dorado: #9C7A2E;
+  --carbon: #2B2420;
+}
+
+* {
+  scroll-behavior: smooth;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+/* ---------- Utility color classes not in Tailwind config aliasing ---------- */
+.bg-terracota-dark { background-color: var(--terracota-dark); }
+.bg-oliva-dark { background-color: var(--oliva-dark); }
+.text-terracota-dark { color: var(--terracota-dark); }
+.text-carbon-soft { color: #4A3F37; }
+.hover\:bg-terracota-dark:hover { background-color: var(--terracota-dark); }
+.hover\:bg-oliva-dark:hover { background-color: var(--oliva-dark); }
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #F3E9DA;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--terracota);
+  border-radius: 999px;
+  border: 2px solid #F3E9DA;
+}
+
+/* ---------- Navbar states ---------- */
+#navbar {
+  background: transparent;
+}
+#navbar .navbar-text {
+  color: #FBF6EE;
+}
+#navbar.scrolled {
+  background: rgba(251, 246, 238, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 4px 30px -10px rgba(43, 36, 32, 0.15);
+  border-bottom: 1px solid rgba(43, 36, 32, 0.06);
+}
+#navbar.scrolled .navbar-text {
+  color: var(--carbon);
+}
+
+.nav-link {
+  position: relative;
+  padding-bottom: 2px;
+}
+.nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 0;
+  height: 2px;
+  background: var(--terracota);
+  transition: width 0.25s ease;
+}
+.nav-link:hover::after {
+  width: 100%;
+}
+
+.mobile-nav-link {
+  display: block;
+  padding: 0.65rem 0.25rem;
+  border-radius: 0.5rem;
+  transition: background 0.2s ease, color 0.2s ease, padding-left 0.2s ease;
+}
+.mobile-nav-link:hover {
+  background: rgba(183, 90, 56, 0.08);
+  color: var(--terracota-dark);
+  padding-left: 0.6rem;
+}
+
+#mobile-menu.open {
+  max-height: 400px;
+}
+
+/* ---------- Hero animations ---------- */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up {
+  opacity: 0;
+  animation: fadeUp 0.8s ease forwards;
+}
+
+/* ---------- Tarjeta de Reserva Rápida ---------- */
+.booking-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.booking-label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--terracota-dark);
+}
+.booking-input {
+  border: 1px solid rgba(43, 36, 32, 0.15);
+  outline: none;
+  background: #fff;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--carbon);
+  width: 100%;
+  cursor: pointer;
+  border-radius: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.booking-input:focus {
+  border-color: var(--terracota);
+  box-shadow: 0 0 0 3px rgba(183, 90, 56, 0.15);
+}
+
+/* ---------- Room cards ---------- */
+.room-card {
+  background: #fff;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  border: 1px solid rgba(43, 36, 32, 0.07);
+  box-shadow: 0 4px 20px -8px rgba(43, 36, 32, 0.12);
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+  display: flex;
+  flex-direction: column;
+}
+.room-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 45px -15px rgba(43, 36, 32, 0.3);
+}
+.room-card .room-image-wrap {
+  position: relative;
+  overflow: hidden;
+  height: 15rem;
+}
+.room-card .room-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+.room-card:hover .room-image-wrap img {
+  transform: scale(1.08);
+}
+
+.feature-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--oliva-dark);
+  background: rgba(107, 122, 79, 0.1);
+  border: 1px solid rgba(107, 122, 79, 0.2);
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+}
+
+.price-tag {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  color: var(--terracota-dark);
+}
+
+/* ---------- Amenity cards ---------- */
+.amenity-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 1.25rem;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+.amenity-card:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.14);
+}
+.amenity-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--dorado), #C9A24B);
+  color: var(--carbon);
+  margin-bottom: 0.85rem;
+}
+
+.gallery-thumb {
+  position: relative;
+  border-radius: 1rem;
+  overflow: hidden;
+  aspect-ratio: 4/3;
+}
+.gallery-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+.gallery-thumb:hover img {
+  transform: scale(1.1);
+}
+
+/* ---------- Location highlight cards ---------- */
+.highlight-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: #fff;
+  border: 1px solid rgba(43, 36, 32, 0.08);
+  border-radius: 1.25rem;
+  padding: 1.1rem 1.25rem;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.highlight-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 10px 25px -12px rgba(43, 36, 32, 0.2);
+}
+.highlight-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  background: rgba(183, 90, 56, 0.1);
+  color: var(--terracota-dark);
+  flex-shrink: 0;
+}
+
+/* ---------- Misc ---------- */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(30%) sepia(45%) saturate(700%) hue-rotate(340deg);
+  cursor: pointer;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, rgba(43,36,32,0.06) 25%, rgba(43,36,32,0.12) 37%, rgba(43,36,32,0.06) 63%);
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.4s ease infinite;
+}
+@keyframes skeleton-loading {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+@media (max-width: 640px) {
+  .booking-field {
+    padding: 0.3rem 0.75rem;
+  }
+}
