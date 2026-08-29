@@ -1,0 +1,21 @@
+{
+  "name": "hotel-cocomacan-whatsapp-bot",
+  "version": "1.0.0",
+  "description": "Chatbot de WhatsApp para cotizaciones y preguntas frecuentes de Hotel Posada Cocomacan",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node test/logic.test.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.61.0",
+    "axios": "^1.7.7",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0"
+  }
+}
