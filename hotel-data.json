@@ -106,7 +106,7 @@
       "capacity": "1 - 2 Personas",
       "beds": "1 Cama King Size",
       "rates": [
-        { "guests": "1-2", "price_mxn": "Consultar cotización" }
+        { "guests": "1-2", "price_mxn": 1250 }
       ],
       "common_features": ["Espacio superior", "Wi-Fi", "Agua caliente", "Baño privado con regadera", "TV con cable", "Servicio de limpieza daily"],
       "image": "public/images/suite_entrance.jpg",
@@ -119,7 +119,7 @@
       "beds": "1 Cama King Size",
       "description": "La suite más amplia y exclusiva del hotel.",
       "rates": [
-        { "guests": "1-2", "price_mxn": "Consultar cotización" }
+        { "guests": "1-2", "price_mxn": 1400 }
       ],
       "common_features": ["Vista / Espacio premium", "Wi-Fi", "Agua caliente", "Baño privado con regadera", "TV con cable", "Servicio de limpieza daily"],
       "image": "public/images/suite_bed.jpg",
