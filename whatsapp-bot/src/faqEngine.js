@@ -2,7 +2,19 @@ import Anthropic from '@anthropic-ai/sdk';
 import { config } from './config.js';
 import { getHotelData } from './hotelData.js';
 
-const anthropic = new Anthropic({ apiKey: config.anthropic.apiKey });
+// OJO: el constructor de Anthropic() revienta de inmediato si apiKey viene
+// vacío/undefined — y eso pasaba en el import de este archivo, es decir, al
+// arrancar TODO el servidor (no solo al usar FAQs). Por eso se crea de forma
+// perezosa (lazy) dentro de answerFaq, envuelto en try/catch: si falta la
+// key, solo se cae la función de FAQs con un mensaje de respaldo, no el bot
+// completo (cotizaciones y menú siguen funcionando normal).
+let anthropic = null;
+function getClient() {
+  if (!anthropic) {
+    anthropic = new Anthropic({ apiKey: config.anthropic.apiKey });
+  }
+  return anthropic;
+}
 
 function buildSystemPrompt() {
   const data = getHotelData();
@@ -59,7 +71,7 @@ const FALLBACK_MESSAGE =
 
 export async function answerFaq(question) {
   try {
-    const response = await anthropic.messages.create({
+    const response = await getClient().messages.create({
       model: config.anthropic.model,
       max_tokens: 400,
       system: getSystemPrompt(),
