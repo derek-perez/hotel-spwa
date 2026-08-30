@@ -1,6 +1,7 @@
 import { computeQuote, guestsFitRoom, getCapacityRange } from '../src/quoteEngine.js';
 import { parseFlexibleDate, nightsBetween, isAfter, isTodayOrFuture, formatDateEs } from '../src/dateUtils.js';
 import { findRoomType, listRoomTypes } from '../src/hotelData.js';
+import { normalizeRecipient } from '../src/whatsappClient.js';
 
 function assert(cond, msg) {
   if (!cond) {
@@ -61,5 +62,23 @@ const q6 = computeQuote({ roomTypeId: 'single_room', guests: 1, checkIn: d1, che
 assert(q6.pricePerNight === 700, 'quoteEngine: sencilla 1 huésped = $700/noche');
 const q7 = computeQuote({ roomTypeId: 'single_room', guests: 2, checkIn: d1, checkOut: d2 });
 assert(q7.pricePerNight === 900, 'quoteEngine: sencilla 2 huéspedes = $900/noche');
+
+// --- whatsappClient: normalización de números mexicanos ---
+assert(
+  normalizeRecipient('5215516479132') === '525516479132',
+  'whatsappClient: quita el "1" extra de México (521... => 52...)'
+);
+assert(
+  normalizeRecipient('525516479132') === '525516479132',
+  'whatsappClient: no toca un número mexicano ya sin el "1" extra'
+);
+assert(
+  normalizeRecipient('+52 155 1647 9132') === '525516479132',
+  'whatsappClient: ignora espacios/símbolos y aplica la misma regla'
+);
+assert(
+  normalizeRecipient('14155552671') === '14155552671',
+  'whatsappClient: no toca números de otros países (ej. EE.UU.)'
+);
 
 console.log('\nListo.');
