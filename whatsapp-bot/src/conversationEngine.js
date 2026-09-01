@@ -19,6 +19,47 @@ function money(n) {
   return `$${n.toLocaleString('es-MX')} MXN`;
 }
 
+// ---------- mensaje pre-armado que manda el sitio web ----------
+//
+// El botón "Consultar disponibilidad" del sitio (script.js → buildWhatsAppLink)
+// abre WhatsApp con un texto ya formateado tipo:
+//
+//   ¡Hola! Me gustaría consultar disponibilidad en Hotel Posada Cocomacan.
+//   📅 Entrada: 14 de septiembre de 2026
+//   📅 Salida: 16 de septiembre de 2026
+//   🛏 Habitación / Huéspedes: Habitación Doble — 4 huéspedes
+//   ¿Tienen espacio disponible para estas fechas?
+//
+// Antes esto caía directo en answerFaq() (texto libre sin pasar por el
+// menú) — Claude no lo entendía como una cotización estructurada y el
+// huésped terminaba teniendo que repetir todo a mano. Esto lo detecta y
+// arranca la cotización con lo que ya trae, en vez de tratarlo como una
+// pregunta cualquiera.
+export function parseWebsiteQuoteMessage(text) {
+  if (!text) return null;
+  const entrada = text.match(/entrada:\s*([^\n]+)/i);
+  const salida = text.match(/salida:\s*([^\n]+)/i);
+  const habitacion = text.match(/habitaci[oó]n\s*\/\s*hu[eé]spedes:\s*([^\n]+)/i);
+  // Exigimos las tres etiquetas juntas para no disparar con un mensaje
+  // libre que solo mencione "entrada" o "salida" de pasada.
+  if (!entrada || !salida || !habitacion) return null;
+  return {
+    checkinRaw: entrada[1].trim(),
+    checkoutRaw: salida[1].trim(),
+    roomOrGuestsRaw: habitacion[1].trim(),
+  };
+}
+
+export function extractGuestsFromLabel(label) {
+  const match = label.match(/(\d+)\s*hu[eé]sped/i);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+export function extractRoomTypeFromLabel(label) {
+  const normalizedLabel = normalize(label);
+  return listRoomTypes().find((r) => normalizedLabel.includes(normalize(r.name))) || null;
+}
+
 // Comandos globales: funcionan sin importar en qué paso del flujo esté el usuario.
 function detectGlobalCommand(normalizedText) {
   if (['menu', 'menú', 'inicio', 'hola'].includes(normalizedText)) return 'MENU';
@@ -235,10 +276,60 @@ async function handleMainMenu(to, session, { interactiveId, text, normalized }) 
     return;
   }
 
+  // ¿Es el mensaje pre-armado del botón "Consultar disponibilidad" del
+  // sitio? Si sí, arrancamos la cotización con esos datos en vez de
+  // tratarlo como pregunta libre.
+  const websiteQuote = parseWebsiteQuoteMessage(text);
+  if (websiteQuote) {
+    return handleWebsiteQuoteMessage(to, session, websiteQuote);
+  }
+
   // Texto libre sin pasar por el menú: lo tratamos como pregunta (mejor UX
   // que insistir "no entendí, usa el menú").
   const reply = await answerFaq(text);
   return sendText(to, reply);
+}
+
+async function handleWebsiteQuoteMessage(to, session, { checkinRaw, checkoutRaw, roomOrGuestsRaw }) {
+  const checkIn = parseFlexibleDate(checkinRaw);
+  const checkOut = parseFlexibleDate(checkoutRaw);
+  const guests = extractGuestsFromLabel(roomOrGuestsRaw);
+  const roomType = extractRoomTypeFromLabel(roomOrGuestsRaw);
+  const hasValidDates = Boolean(checkIn && checkOut && isTodayOrFuture(checkIn) && isAfter(checkOut, checkIn));
+
+  session.data = {};
+
+  // Caso ideal: trae fechas válidas + habitación reconocida + huéspedes que
+  // sí caben ahí -> cotización inmediata, cero preguntas de vuelta.
+  if (roomType && hasValidDates && guests && guestsFitRoom(roomType, guests)) {
+    session.data.roomTypeId = roomType.id;
+    session.data.guests = guests;
+    session.data.checkIn = checkIn.toISOString();
+    session.data.checkOut = checkOut.toISOString();
+    saveSession(to, session);
+    await sendText(to, '¡Hola! 👋 Vi tu solicitud desde nuestro sitio — aquí tienes tu cotización al toque:');
+    return sendQuoteSummary(to, session);
+  }
+
+  // Reconocimos la habitación pero falta algo (fechas inválidas/vacías, o
+  // el número de huéspedes no cabe en esa habitación): saltamos directo a
+  // pedir huéspedes, no hace falta que elija la habitación de nuevo.
+  if (roomType) {
+    session.data.roomTypeId = roomType.id;
+    session.state = STATES.ASK_GUESTS;
+    saveSession(to, session);
+    await sendText(to, `¡Hola! 👋 Vi tu solicitud desde nuestro sitio para *${roomType.name}*. Nada más confírmame un dato:`);
+    return sendAskGuests(to, roomType);
+  }
+
+  // No se pudo identificar la habitación (p.ej. "sin preferencia de
+  // habitación", o vino del botón flotante genérico con "Por definir" en
+  // todo): arrancamos la cotización guiada normal, pero con un saludo que
+  // reconoce de dónde viene, no un "no entendí".
+  session.state = STATES.ASK_ROOM_TYPE;
+  saveSession(to, session);
+  await sendText(to, '¡Hola! 👋 Vi tu solicitud desde nuestro sitio. Vamos a armar tu cotización — dime qué habitación te interesa:');
+  return sendRoomTypeList(to);
 }
 
 async function handleAskRoomType(to, session, { interactiveId, normalized }) {
