@@ -112,12 +112,12 @@ async function sendAskGuests(to, roomType) {
 async function sendAskCheckIn(to) {
   await sendText(
     to,
-    'Perfecto. ¿Cuál sería tu fecha de *entrada*?\nPuedes escribirla como día/mes/año (ej. 14/09/2026), o simplemente "hoy" / "mañana".'
+    'Perfecto. ¿Cuál sería tu fecha de *entrada*?\nPuedes escribirla como día/mes/año (ej. 14/09/2026), como "14 de septiembre de 2026", o simplemente "hoy" / "mañana".'
   );
 }
 
 async function sendAskCheckOut(to) {
-  await sendText(to, '¿Y tu fecha de *salida*? (mismo formato, ej. 16/09/2026)');
+  await sendText(to, '¿Y tu fecha de *salida*? (mismo formato, ej. 16/09/2026 o "16 de septiembre de 2026")');
 }
 
 async function sendQuoteSummary(to, session) {
@@ -403,7 +403,7 @@ async function handleAskGuests(to, session, { normalized }) {
 async function handleAskCheckIn(to, session, { text }) {
   const date = parseFlexibleDate(text);
   if (!date) {
-    return sendText(to, 'No logré leer esa fecha 🙈. Usa el formato día/mes/año, por ejemplo: 14/09/2026 (o escribe "hoy"/"mañana").');
+    return sendText(to, 'No logré leer esa fecha 🙈. Prueba con día/mes/año (14/09/2026), "14 de septiembre de 2026", o escribe "hoy"/"mañana".');
   }
   if (!isTodayOrFuture(date)) {
     return sendText(to, 'Esa fecha ya pasó 😅. Dame una fecha de entrada a partir de hoy.');
@@ -418,7 +418,7 @@ async function handleAskCheckIn(to, session, { text }) {
 async function handleAskCheckOut(to, session, { text }) {
   const date = parseFlexibleDate(text);
   if (!date) {
-    return sendText(to, 'No logré leer esa fecha 🙈. Usa el formato día/mes/año, por ejemplo: 16/09/2026.');
+    return sendText(to, 'No logré leer esa fecha 🙈. Prueba con día/mes/año (16/09/2026), o "16 de septiembre de 2026".');
   }
   const checkIn = new Date(session.data.checkIn);
   if (!isAfter(date, checkIn)) {
