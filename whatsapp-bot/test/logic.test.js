@@ -2,6 +2,7 @@ import { computeQuote, guestsFitRoom, getCapacityRange, getOverallMaxCapacity } 
 import { parseFlexibleDate, nightsBetween, isAfter, isTodayOrFuture, formatDateEs } from '../src/dateUtils.js';
 import { findRoomType, listRoomTypes } from '../src/hotelData.js';
 import { normalizeRecipient } from '../src/whatsappClient.js';
+import { parseWebsiteQuoteMessage, extractGuestsFromLabel, extractRoomTypeFromLabel } from '../src/conversationEngine.js';
 
 function assert(cond, msg) {
   if (!cond) {
@@ -108,5 +109,45 @@ assert(
   normalizeRecipient('14155552671') === '14155552671',
   'whatsappClient: no toca números de otros países (ej. EE.UU.)'
 );
+
+// --- dateUtils: formato largo en español (el que usa el sitio web) ---
+const dLargo = parseFlexibleDate('14 de septiembre de 2026');
+assert(dLargo && dLargo.getFullYear() === 2026 && dLargo.getMonth() === 8 && dLargo.getDate() === 14, 'dateUtils: parsea "14 de septiembre de 2026"');
+assert(parseFlexibleDate('31 de febrero de 2026') === null, 'dateUtils: rechaza fecha larga imposible (31 de febrero)');
+assert(parseFlexibleDate('14 de mesinventado de 2026') === null, 'dateUtils: rechaza nombre de mes inválido');
+
+// --- conversationEngine: mensaje pre-armado del sitio web ---
+// Replica exacto lo que arma buildWhatsAppLink() en script.js.
+const mensajeSitioCompleto =
+  '¡Hola! Me gustaría consultar disponibilidad en Hotel Posada Cocomacan.\n\n' +
+  '📅 Entrada: 14 de septiembre de 2026\n' +
+  '📅 Salida: 16 de septiembre de 2026\n' +
+  '🛏 Habitación / Huéspedes: Habitación Doble — 4 huéspedes\n\n' +
+  '¿Tienen espacio disponible para estas fechas?';
+
+const parsedCompleto = parseWebsiteQuoteMessage(mensajeSitioCompleto);
+assert(
+  parsedCompleto &&
+    parsedCompleto.checkinRaw === '14 de septiembre de 2026' &&
+    parsedCompleto.checkoutRaw === '16 de septiembre de 2026' &&
+    parsedCompleto.roomOrGuestsRaw === 'Habitación Doble — 4 huéspedes',
+  'conversationEngine: parsea el mensaje completo del sitio (fechas + habitación + huéspedes)'
+);
+
+assert(extractGuestsFromLabel('Habitación Doble — 4 huéspedes') === 4, 'conversationEngine: extrae 4 huéspedes de la etiqueta');
+assert(extractGuestsFromLabel('1 huésped (sin preferencia de habitación)') === 1, 'conversationEngine: extrae 1 huésped (singular) de la etiqueta');
+assert(extractRoomTypeFromLabel('Habitación Doble — 4 huéspedes')?.id === 'double_room', 'conversationEngine: reconoce "Habitación Doble" en la etiqueta');
+assert(extractRoomTypeFromLabel('2 huéspedes (sin preferencia de habitación)') === null, 'conversationEngine: sin preferencia de habitación => no reconoce ninguna');
+
+const mensajeSitioSinDatos =
+  '¡Hola! Me gustaría consultar disponibilidad en Hotel Posada Cocomacan.\n\n' +
+  '📅 Entrada: Por definir\n' +
+  '📅 Salida: Por definir\n' +
+  '🛏 Habitación / Huéspedes: Por definir\n\n' +
+  '¿Tienen espacio disponible para estas fechas?';
+const parsedSinDatos = parseWebsiteQuoteMessage(mensajeSitioSinDatos);
+assert(parsedSinDatos && parseFlexibleDate(parsedSinDatos.checkinRaw) === null, 'conversationEngine: "Por definir" no se parsea como fecha (cae al flujo guiado normal)');
+
+assert(parseWebsiteQuoteMessage('¿Tienen alberca?') === null, 'conversationEngine: una pregunta normal NO se confunde con el mensaje del sitio');
 
 console.log('\nListo.');
