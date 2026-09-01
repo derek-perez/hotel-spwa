@@ -1,9 +1,9 @@
 import { getSession, saveSession, resetSession, STATES } from './sessionStore.js';
 import { listRoomTypes, findRoomType } from './hotelData.js';
-import { computeQuote, guestsFitRoom, getCapacityRange } from './quoteEngine.js';
+import { computeQuote, guestsFitRoom, getCapacityRange, getOverallMaxCapacity } from './quoteEngine.js';
 import { parseFlexibleDate, isTodayOrFuture, isAfter, formatDateEs } from './dateUtils.js';
 import { answerFaq } from './faqEngine.js';
-import { sendText, sendList, sendButtons } from './whatsappClient.js';
+import { sendText, sendList, sendButtons, notifyStaff } from './whatsappClient.js';
 
 // ---------- helpers de texto ----------
 
@@ -83,6 +83,21 @@ async function sendQuoteSummary(to, session) {
   const { roomTypeId, guests, checkIn, checkOut } = session.data;
   const result = computeQuote({ roomTypeId, guests, checkIn: new Date(checkIn), checkOut: new Date(checkOut) });
 
+  const checkInLabel = formatDateEs(new Date(checkIn));
+  const checkOutLabel = formatDateEs(new Date(checkOut));
+
+  if (!result.ok && result.reason === 'no_availability') {
+    await sendText(
+      to,
+      `Justo para esas fechas (${checkInLabel} → ${checkOutLabel}) ya no tenemos disponibilidad 😕. Si gustas, escribe *agente* y el equipo del hotel te confirma fechas cercanas u otras opciones, o escribe *cotizar* para intentar con otras fechas.`
+    );
+    await notifyStaff(
+      `📅 Alguien preguntó por ${result.roomType.name} del ${checkInLabel} al ${checkOutLabel} — fechas marcadas SIN disponibilidad. Cliente: ${to}. Puede valer la pena ofrecerle alternativas directamente.`
+    );
+    resetSession(to);
+    return;
+  }
+
   if (!result.ok) {
     // No debería pasar si validamos bien en cada paso, pero por si acaso:
     await sendText(to, 'Algo no cuadró con esos datos 🤔. Vamos a intentarlo de nuevo.');
@@ -91,9 +106,6 @@ async function sendQuoteSummary(to, session) {
     await sendRoomTypeList(to);
     return;
   }
-
-  const checkInLabel = formatDateEs(new Date(checkIn));
-  const checkOutLabel = formatDateEs(new Date(checkOut));
 
   if (result.needsManualQuote) {
     await sendText(
@@ -141,6 +153,7 @@ async function handleGlobalCommand(to, command, session) {
       to,
       'Listo, un miembro del equipo de Hotel Posada Cocomacan revisará este chat y te contestará en breve. 🙌'
     );
+    await notifyStaff(`🙋 ${to} pidió hablar con un agente del hotel por WhatsApp.`);
     resetSession(to);
     return true;
   }
@@ -217,6 +230,7 @@ async function handleMainMenu(to, session, { interactiveId, text, normalized }) 
   }
   if (interactiveId === 'menu_agente') {
     await sendText(to, 'Listo, un miembro del equipo del hotel te contestará por este mismo chat en breve. 🙌');
+    await notifyStaff(`🙋 ${to} pidió hablar con un agente del hotel por WhatsApp.`);
     resetSession(to);
     return;
   }
@@ -260,6 +274,25 @@ async function handleAskGuests(to, session, { normalized }) {
 
   if (!Number.isInteger(guests) || guests <= 0) {
     return sendText(to, 'Ese número no lo agarré bien 🙈. Escribe solo la cantidad de huéspedes, por ejemplo: 2');
+  }
+
+  // Grupos que no caben en UNA sola habitación (hoy, más de 6): el bot no
+  // arma combinaciones de varias habitaciones automático (necesitaría
+  // llevar inventario/disponibilidad real por habitación — eso es fase 2),
+  // así que se atienden a mano. Se manda ANTES de checar la habitación
+  // puntual que eligieron, porque el problema no es esa habitación: es que
+  // necesitan más de una.
+  const maxCapacity = getOverallMaxCapacity();
+  if (guests > maxCapacity) {
+    await sendText(
+      to,
+      `Para ${guests} personas normalmente combinamos varias habitaciones para acomodar a todo el grupo 🙂. Escribe *agente* y el equipo del hotel te arma la mejor combinación y el precio total.`
+    );
+    await notifyStaff(
+      `👥 Grupo grande: ${to} preguntó por ${guests} huéspedes (partió de ${roomType.name}) — necesita combinar varias habitaciones, seguimiento manual.`
+    );
+    resetSession(to);
+    return;
   }
 
   if (!guestsFitRoom(roomType, guests)) {
@@ -308,10 +341,17 @@ async function handleAskCheckOut(to, session, { text }) {
 
 async function handleConfirmSummary(to, session, { interactiveId }) {
   if (interactiveId === 'confirm_reservar') {
+    const { roomTypeId, guests, checkIn, checkOut } = session.data;
+    const roomType = findRoomType(roomTypeId);
+    const resumen = roomType
+      ? `${roomType.name} · ${guests} huésped(es) · ${formatDateEs(new Date(checkIn))} → ${formatDateEs(new Date(checkOut))}`
+      : 'detalles no disponibles';
+
     await sendText(
       to,
       '¡Excelente! 🎉 Un miembro del equipo de Hotel Posada Cocomacan confirmará disponibilidad y te contactará por este mismo chat para completar tu reserva.'
     );
+    await notifyStaff(`✅ Nueva solicitud de reservación\nCliente: ${to}\n${resumen}\n\nContáctalo por este mismo WhatsApp para confirmar y cerrar.`);
     resetSession(to);
     return;
   }
