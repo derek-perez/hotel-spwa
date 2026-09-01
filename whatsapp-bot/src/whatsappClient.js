@@ -60,6 +60,49 @@ export function sendText(to, body) {
   });
 }
 
+// --- Alertas internas al staff/recepción ---
+// Cómo se entera recepción de que alguien quiere reservar: el bot le manda
+// un WhatsApp directo (texto libre) al número configurado en
+// HOTEL_STAFF_WHATSAPP_NUMBER cada vez que un huésped pide hablar con un
+// agente, confirma que quiere reservar, o pregunta por fechas sin
+// disponibilidad.
+//
+// Limitación real a tener en cuenta: WhatsApp solo permite mensajes de
+// texto libre (no plantilla) a un número que le haya escrito al bot en las
+// últimas 24 horas ("ventana de servicio al cliente"). Para que estas
+// alertas SIEMPRE lleguen sin importar cuánto tiempo pase, lo más simple es
+// que el staff le mande un "hola" al número del bot una vez al día (o cada
+// vez que abran turno) — eso mantiene la ventana abierta. La alternativa
+// "a prueba de todo" es una plantilla de WhatsApp aprobada por Meta
+// dedicada a estas alertas (no depende de la ventana de 24h), pero esa
+// aprobación no es instantánea — buen candidato para fase 2.
+//
+// Nunca debe tronar el flujo del huésped si esto falla: por diseño,
+// notifyStaff() atrapa sus propios errores y nunca los propaga.
+let warnedMissingStaffNumber = false;
+
+export async function notifyStaff(text) {
+  const staffNumbers = config.hotel.staffNumbers;
+  if (staffNumbers.length === 0) {
+    if (!warnedMissingStaffNumber) {
+      console.warn(
+        '⚠️  HOTEL_STAFF_WHATSAPP_NUMBER no configurado — no se están mandando alertas internas de reservación/agente al staff.'
+      );
+      warnedMissingStaffNumber = true;
+    }
+    return;
+  }
+  // Se manda a todos en paralelo; si uno falla (ej. no le ha escrito al bot
+  // en 24h) no debe tumbar el aviso a los demás.
+  await Promise.all(
+    staffNumbers.map((number) =>
+      sendText(number, text).catch((err) => {
+        console.error(`❌ No se pudo mandar la alerta interna a ${number}:`, err.response?.data || err.message);
+      })
+    )
+  );
+}
+
 /**
  * sections: [{ title?, rows: [{ id, title, description? }] }]
  * Límites de WhatsApp: máx 10 filas en total, title ≤ 24 chars, description ≤ 72 chars.
