@@ -41,6 +41,7 @@ DATOS DEL HOTEL:
 Eslogan: ${data.hotel_info.slogan}
 Check-in: ${data.hotel_info.policies.check_in} — Check-out: ${data.hotel_info.policies.check_out}
 ¿Acepta mascotas?: ${data.hotel_info.policies.pet_friendly ? 'Sí' : 'No'}
+¿Factura?: ${data.hotel_info.policies.invoicing ? `Sí. ${data.hotel_info.policies.invoicing_note}` : 'No se ofrece facturación.'}
 
 Habitaciones:
 ${rooms}
