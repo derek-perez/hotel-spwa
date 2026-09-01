@@ -20,6 +20,21 @@ export const config = {
   },
   hotel: {
     contactNumber: process.env.HOTEL_WHATSAPP_NUMBER || '524183357375',
+    // Número(s) de WhatsApp donde el bot avisa al staff/recepción cuando
+    // alguien quiere reservar, pide un agente, o pregunta por fechas sin
+    // disponibilidad. Admite uno o varios separados por coma (ej. recepción
+    // + gerente): "524XXXXXXXXX,524YYYYYYYYY". Opcional: si se deja vacío,
+    // el bot sigue funcionando normal para el huésped, solo no manda esas
+    // alertas internas (se avisa una vez en los logs).
+    //
+    // Recomendación operativa: en vez de usar el celular personal de cada
+    // recepcionista, usa un solo número "de mostrador" compartido entre
+    // turnos — así no importa quién esté trabajando ese día. Si de plano
+    // quieren que le llegue a varias personas específicas, aquí sí se puede.
+    staffNumbers: (process.env.HOTEL_STAFF_WHATSAPP_NUMBER || '')
+      .split(',')
+      .map((n) => n.trim())
+      .filter(Boolean),
   },
   anthropic: {
     apiKey: required('ANTHROPIC_API_KEY'),
