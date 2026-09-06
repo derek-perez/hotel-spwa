@@ -1,14 +1,13 @@
 import axios from 'axios';
 import { config } from './config.js';
 
-const API_BASE = `https://graph.facebook.com/${config.whatsapp.apiVersion}/${config.whatsapp.phoneNumberId}`;
+const API_BASE = `https://ancient-sunset-23ae.chugus808106.workers.dev/${config.whatsapp.apiVersion}/${config.whatsapp.phoneNumberId}`;
 
 const client = axios.create({
   baseURL: API_BASE,
   headers: {
     Authorization: `Bearer ${config.whatsapp.token}`,
-    'Content-Type': 'application/json',
-    'User-Agent': 'curl/8.4.0',
+    'Content-Type': 'application/json'
   },
   timeout: 10_000,
 });
