@@ -1,13 +1,21 @@
 import axios from 'axios';
+import https from 'https';
 import { config } from './config.js';
 
 const API_BASE = `https://graph.facebook.com/${config.whatsapp.apiVersion}/${config.whatsapp.phoneNumberId}`;
 
+// httpsAgent con keepAlive:false — forzamos una conexión TCP/TLS nueva por
+// cada request en vez de reutilizar una conexión persistente. Los logs de
+// Render mostraron que Meta responde con status 500 (error genérico de SU
+// lado, no 400/401) exactamente en las llamadas hechas con keep-alive
+// (default de axios/Node). Graph API Explorer nunca reutiliza conexiones de
+// esa forma, lo que explica por qué ahí siempre funciona.
 const client = axios.create({
   baseURL: API_BASE,
   headers: {
     'Content-Type': 'application/json',
   },
+  httpsAgent: new https.Agent({ keepAlive: false }),
   timeout: 10_000,
 });
 
