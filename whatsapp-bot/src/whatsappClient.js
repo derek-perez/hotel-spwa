@@ -8,6 +8,7 @@ const client = axios.create({
   headers: {
     Authorization: `Bearer ${config.whatsapp.token}`,
     'Content-Type': 'application/json',
+    'User-Agent': 'curl/8.4.0',
   },
   timeout: 10_000,
 });
