@@ -16,7 +16,11 @@ export const config = {
     phoneNumberId: required('WHATSAPP_PHONE_NUMBER_ID'),
     verifyToken: required('WHATSAPP_VERIFY_TOKEN'),
     appSecret: required('WHATSAPP_APP_SECRET'),
-    apiVersion: process.env.WHATSAPP_API_VERSION || 'v21.0',
+    // v25.0: es la versión que el propio App Dashboard de Meta usa hoy para
+    // generar su cURL de ejemplo para esta cuenta (antes estaba en v21.0,
+    // sin relación probada con el bug, pero es una variable nunca antes
+    // probada y es gratis alinearla con lo que Meta mismo recomienda ahora).
+    apiVersion: process.env.WHATSAPP_API_VERSION || 'v25.0',
   },
   hotel: {
     contactNumber: process.env.HOTEL_WHATSAPP_NUMBER || '524183357375',
