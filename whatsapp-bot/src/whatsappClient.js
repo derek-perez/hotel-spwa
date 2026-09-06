@@ -4,15 +4,14 @@ import { config } from './config.js';
 
 const API_BASE = `https://graph.facebook.com/${config.whatsapp.apiVersion}/${config.whatsapp.phoneNumberId}`;
 
-// httpsAgent con keepAlive:false — forzamos una conexión TCP/TLS nueva por
-// cada request en vez de reutilizar una conexión persistente. Los logs de
-// Render mostraron que Meta responde con status 500 (error genérico de SU
-// lado, no 400/401) exactamente en las llamadas hechas con keep-alive
-// (default de axios/Node). Graph API Explorer nunca reutiliza conexiones de
-// esa forma, lo que explica por qué ahí siempre funciona.
+// httpsAgent con keepAlive:false — se probó como hipótesis (Meta respondía
+// 500 en los envíos con keep-alive) pero NO resolvió el error. Se deja
+// desactivado de todos modos (no hace daño) mientras se investiga la causa
+// real; candidato a revertir si algún día estorba.
 const client = axios.create({
   baseURL: API_BASE,
   headers: {
+    Authorization: `Bearer ${config.whatsapp.token}`,
     'Content-Type': 'application/json',
   },
   httpsAgent: new https.Agent({ keepAlive: false }),
@@ -40,15 +39,17 @@ export function normalizeRecipient(to) {
 async function post(payload) {
   const body = payload.to ? { ...payload, to: normalizeRecipient(payload.to) } : payload;
   try {
-    // El token va como query param (?access_token=...), no como header
-    // Authorization: Bearer. Esto no es antojo — es EXACTAMENTE lo que hace
-    // la llamada que Graph API Explorer genera y que sí funciona (verificado
-    // byte a byte con su función "Obtener código" > cURL). Las llamadas
-    // idénticas vía header Authorization fallaban con OAuthException
-    // genérico (code 1) solo desde nuestro servidor, nunca desde Explorer.
-    const { data } = await client.post('/messages', body, {
-      params: { access_token: config.whatsapp.token },
-    });
+    // Volvimos al header Authorization: Bearer (estándar documentado por
+    // Meta). El intento anterior de mandar el token como query param
+    // (?access_token=...) partía de una lectura incorrecta de lo que hace
+    // Graph API Explorer — se confirmó directamente en el panel "Enviar
+    // mensaje" del propio App Dashboard (Meta for Developers > Casos de
+    // uso > Conectar en WhatsApp > Paso 2 > Enviar mensaje > pestaña
+    // "Código") que el cURL que Meta genera para ESTA cuenta usa
+    // exactamente 'Authorization: Bearer <token>' + body JSON crudo, no
+    // query params ni form-data. Y de paso: ese mismo panel muestra la app
+    // usando v25.0, mientras nosotros seguíamos en v21.0 (ver config.js).
+    const { data } = await client.post('/messages', body);
     return data;
   } catch (err) {
     // Meta devuelve el detalle del error en err.response.data — es oro para
