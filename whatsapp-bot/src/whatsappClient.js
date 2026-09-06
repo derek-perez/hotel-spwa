@@ -1,13 +1,12 @@
 import axios from 'axios';
 import { config } from './config.js';
 
-const API_BASE = `https://ancient-sunset-23ae.chugus808106.workers.dev/${config.whatsapp.apiVersion}/${config.whatsapp.phoneNumberId}`;
+const API_BASE = `https://graph.facebook.com/${config.whatsapp.apiVersion}/${config.whatsapp.phoneNumberId}`;
 
 const client = axios.create({
   baseURL: API_BASE,
   headers: {
-    Authorization: `Bearer ${config.whatsapp.token}`,
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
   },
   timeout: 10_000,
 });
@@ -33,7 +32,15 @@ export function normalizeRecipient(to) {
 async function post(payload) {
   const body = payload.to ? { ...payload, to: normalizeRecipient(payload.to) } : payload;
   try {
-    const { data } = await client.post('/messages', body);
+    // El token va como query param (?access_token=...), no como header
+    // Authorization: Bearer. Esto no es antojo — es EXACTAMENTE lo que hace
+    // la llamada que Graph API Explorer genera y que sí funciona (verificado
+    // byte a byte con su función "Obtener código" > cURL). Las llamadas
+    // idénticas vía header Authorization fallaban con OAuthException
+    // genérico (code 1) solo desde nuestro servidor, nunca desde Explorer.
+    const { data } = await client.post('/messages', body, {
+      params: { access_token: config.whatsapp.token },
+    });
     return data;
   } catch (err) {
     // Meta devuelve el detalle del error en err.response.data — es oro para
