@@ -1,0 +1,153 @@
+import { computeQuote, guestsFitRoom, getCapacityRange, getOverallMaxCapacity } from '../src/quoteEngine.js';
+import { parseFlexibleDate, nightsBetween, isAfter, isTodayOrFuture, formatDateEs } from '../src/dateUtils.js';
+import { findRoomType, listRoomTypes } from '../src/hotelData.js';
+import { normalizeRecipient } from '../src/whatsappClient.js';
+import { parseWebsiteQuoteMessage, extractGuestsFromLabel, extractRoomTypeFromLabel } from '../src/conversationEngine.js';
+
+function assert(cond, msg) {
+  if (!cond) {
+    console.error('❌ FAIL:', msg);
+    process.exitCode = 1;
+  } else {
+    console.log('✅', msg);
+  }
+}
+
+// --- hotelData ---
+assert(listRoomTypes().length === 5, 'hotelData: 5 tipos de habitación cargados');
+assert(findRoomType('double_room').name === 'Habitación Doble', 'hotelData: encuentra double_room');
+assert(findRoomType('no_existe') === null, 'hotelData: room inexistente => null');
+
+// --- dateUtils ---
+// OJO: estas fechas (14-16 sep 2026) son las que usamos SOLO para probar el
+// parseo/aritmética de fechas — a propósito son las mismas que quedaron
+// marcadas como "sin disponibilidad" en hotel-data.json (blackout_dates),
+// así que las pruebas de computeQuote más abajo usan fechas DISTINTAS para
+// no mezclar ambas cosas.
+const d1 = parseFlexibleDate('14/09/2026');
+assert(d1 && d1.getFullYear() === 2026 && d1.getMonth() === 8 && d1.getDate() === 14, 'dateUtils: parsea dd/mm/aaaa');
+
+const d2 = parseFlexibleDate('2026-09-16');
+assert(d2 && d2.getMonth() === 8 && d2.getDate() === 16, 'dateUtils: parsea ISO aaaa-mm-dd');
+
+assert(parseFlexibleDate('31/02/2026') === null, 'dateUtils: rechaza fecha imposible (31 feb)');
+assert(parseFlexibleDate('mañana') !== null, 'dateUtils: entiende "mañana"');
+assert(parseFlexibleDate('hoy') !== null, 'dateUtils: entiende "hoy"');
+assert(parseFlexibleDate('mmm') === null, 'dateUtils: texto basura => null');
+
+assert(nightsBetween(d1, d2) === 2, 'dateUtils: nightsBetween 14->16 sep = 2 noches');
+assert(isAfter(d2, d1) === true, 'dateUtils: 16 sep es después de 14 sep');
+assert(isTodayOrFuture(new Date(2020, 0, 1)) === false, 'dateUtils: fecha pasada no es hoy/futuro');
+console.log('   formatDateEs ejemplo:', formatDateEs(d1));
+
+// --- quoteEngine (fechas normales, fuera del bloqueo de sep 14-16) ---
+const qIn = parseFlexibleDate('20/09/2026');
+const qOut = parseFlexibleDate('22/09/2026');
+
+const doubleRoom = findRoomType('double_room');
+assert(guestsFitRoom(doubleRoom, 4) === true, 'quoteEngine: 4 huéspedes cabe en doble (3-4)');
+assert(guestsFitRoom(doubleRoom, 1) === false, 'quoteEngine: 1 huésped NO cabe en doble (3-4)');
+
+const capDouble = getCapacityRange(doubleRoom);
+assert(capDouble.min === 3 && capDouble.max === 4, 'quoteEngine: rango de capacidad doble = 3-4');
+
+assert(getOverallMaxCapacity() === 6, 'quoteEngine: capacidad máxima de UNA habitación = 6 (Triple) — grupos más grandes necesitan combinar habitaciones');
+
+const q1 = computeQuote({ roomTypeId: 'double_room', guests: 4, checkIn: qIn, checkOut: qOut });
+assert(q1.ok && !q1.needsManualQuote && q1.nights === 2 && q1.pricePerNight === 1200 && q1.total === 2400, 'quoteEngine: doble 4 huéspedes x 2 noches = $2400');
+
+const q2 = computeQuote({ roomTypeId: 'suite_junior', guests: 2, checkIn: qIn, checkOut: qOut });
+assert(q2.ok && q2.needsManualQuote === true, 'quoteEngine: suite_junior => needsManualQuote');
+
+const q3 = computeQuote({ roomTypeId: 'single_room', guests: 5, checkIn: qIn, checkOut: qOut });
+assert(q3.ok === false && q3.reason === 'guests_out_of_range', 'quoteEngine: 5 huéspedes en sencilla => fuera de rango');
+
+const q4 = computeQuote({ roomTypeId: 'single_room', guests: 1, checkIn: qOut, checkOut: qIn });
+assert(q4.ok === false && q4.reason === 'invalid_dates', 'quoteEngine: checkout antes que checkin => invalid_dates');
+
+const q5 = computeQuote({ roomTypeId: 'single_room', guests: 1, checkIn: qIn, checkOut: qIn });
+assert(q5.ok === false && q5.reason === 'invalid_dates', 'quoteEngine: 0 noches (mismo día) => invalid_dates');
+
+const singleRoom = findRoomType('single_room');
+const q6 = computeQuote({ roomTypeId: 'single_room', guests: 1, checkIn: qIn, checkOut: qOut });
+assert(q6.pricePerNight === 700, 'quoteEngine: sencilla 1 huésped = $700/noche');
+const q7 = computeQuote({ roomTypeId: 'single_room', guests: 2, checkIn: qIn, checkOut: qOut });
+assert(q7.pricePerNight === 900, 'quoteEngine: sencilla 2 huéspedes = $900/noche');
+
+// --- quoteEngine: bloqueos de disponibilidad (blackout_dates) ---
+const bIn = parseFlexibleDate('14/09/2026');
+const bOut = parseFlexibleDate('16/09/2026');
+const q8 = computeQuote({ roomTypeId: 'double_room', guests: 4, checkIn: bIn, checkOut: bOut });
+assert(q8.ok === false && q8.reason === 'no_availability', 'quoteEngine: 14->16 sep está bloqueado => no_availability');
+
+// Traslape parcial: entra un día antes del bloqueo, sale un día dentro de él.
+const bPartialIn = parseFlexibleDate('13/09/2026');
+const bPartialOut = parseFlexibleDate('15/09/2026');
+const q9 = computeQuote({ roomTypeId: 'double_room', guests: 4, checkIn: bPartialIn, checkOut: bPartialOut });
+assert(q9.ok === false && q9.reason === 'no_availability', 'quoteEngine: traslape parcial con el bloqueo también cuenta como no_availability');
+
+// Justo después del bloqueo (entra el mismo día que "end" ya liberó) => sí hay disponibilidad.
+const bAfterIn = parseFlexibleDate('17/09/2026');
+const bAfterOut = parseFlexibleDate('18/09/2026');
+const q10 = computeQuote({ roomTypeId: 'double_room', guests: 4, checkIn: bAfterIn, checkOut: bAfterOut });
+assert(q10.ok === true, 'quoteEngine: 17->18 sep ya no está en el bloqueo => sí cotiza');
+
+// --- whatsappClient: normalización de números mexicanos ---
+assert(
+  normalizeRecipient('5215516479132') === '525516479132',
+  'whatsappClient: quita el "1" extra de México (521... => 52...)'
+);
+assert(
+  normalizeRecipient('525516479132') === '525516479132',
+  'whatsappClient: no toca un número mexicano ya sin el "1" extra'
+);
+assert(
+  normalizeRecipient('+52 155 1647 9132') === '525516479132',
+  'whatsappClient: ignora espacios/símbolos y aplica la misma regla'
+);
+assert(
+  normalizeRecipient('14155552671') === '14155552671',
+  'whatsappClient: no toca números de otros países (ej. EE.UU.)'
+);
+
+// --- dateUtils: formato largo en español (el que usa el sitio web) ---
+const dLargo = parseFlexibleDate('14 de septiembre de 2026');
+assert(dLargo && dLargo.getFullYear() === 2026 && dLargo.getMonth() === 8 && dLargo.getDate() === 14, 'dateUtils: parsea "14 de septiembre de 2026"');
+assert(parseFlexibleDate('31 de febrero de 2026') === null, 'dateUtils: rechaza fecha larga imposible (31 de febrero)');
+assert(parseFlexibleDate('14 de mesinventado de 2026') === null, 'dateUtils: rechaza nombre de mes inválido');
+
+// --- conversationEngine: mensaje pre-armado del sitio web ---
+// Replica exacto lo que arma buildWhatsAppLink() en script.js.
+const mensajeSitioCompleto =
+  '¡Hola! Me gustaría consultar disponibilidad en Hotel Posada Cocomacan.\n\n' +
+  '📅 Entrada: 14 de septiembre de 2026\n' +
+  '📅 Salida: 16 de septiembre de 2026\n' +
+  '🛏 Habitación / Huéspedes: Habitación Doble — 4 huéspedes\n\n' +
+  '¿Tienen espacio disponible para estas fechas?';
+
+const parsedCompleto = parseWebsiteQuoteMessage(mensajeSitioCompleto);
+assert(
+  parsedCompleto &&
+    parsedCompleto.checkinRaw === '14 de septiembre de 2026' &&
+    parsedCompleto.checkoutRaw === '16 de septiembre de 2026' &&
+    parsedCompleto.roomOrGuestsRaw === 'Habitación Doble — 4 huéspedes',
+  'conversationEngine: parsea el mensaje completo del sitio (fechas + habitación + huéspedes)'
+);
+
+assert(extractGuestsFromLabel('Habitación Doble — 4 huéspedes') === 4, 'conversationEngine: extrae 4 huéspedes de la etiqueta');
+assert(extractGuestsFromLabel('1 huésped (sin preferencia de habitación)') === 1, 'conversationEngine: extrae 1 huésped (singular) de la etiqueta');
+assert(extractRoomTypeFromLabel('Habitación Doble — 4 huéspedes')?.id === 'double_room', 'conversationEngine: reconoce "Habitación Doble" en la etiqueta');
+assert(extractRoomTypeFromLabel('2 huéspedes (sin preferencia de habitación)') === null, 'conversationEngine: sin preferencia de habitación => no reconoce ninguna');
+
+const mensajeSitioSinDatos =
+  '¡Hola! Me gustaría consultar disponibilidad en Hotel Posada Cocomacan.\n\n' +
+  '📅 Entrada: Por definir\n' +
+  '📅 Salida: Por definir\n' +
+  '🛏 Habitación / Huéspedes: Por definir\n\n' +
+  '¿Tienen espacio disponible para estas fechas?';
+const parsedSinDatos = parseWebsiteQuoteMessage(mensajeSitioSinDatos);
+assert(parsedSinDatos && parseFlexibleDate(parsedSinDatos.checkinRaw) === null, 'conversationEngine: "Por definir" no se parsea como fecha (cae al flujo guiado normal)');
+
+assert(parseWebsiteQuoteMessage('¿Tienen alberca?') === null, 'conversationEngine: una pregunta normal NO se confunde con el mensaje del sitio');
+
+console.log('\nListo.');
