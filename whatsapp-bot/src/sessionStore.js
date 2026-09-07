@@ -3,12 +3,14 @@
 // OJO — limitación consciente para esta v1: si el proceso se reinicia
 // (Render free tier duerme el servicio tras inactividad y lo despierta de
 // cero), las conversaciones a medias se pierden y el usuario simplemente
-// vuelve a ver el menú principal. No perdemos reservas reales porque el
-// bot no confirma reservas por sí mismo (ver README) — solo cotiza y
-// responde FAQs. Si esto se vuelve un problema, la solución es mover esto
-// a Redis o a un archivo/SQLite; el resto del código no cambia porque todo
-// pasa por getSession/saveSession.
-
+// vuelve a ver el menú principal. Desde que el bot confirma reservas por sí
+// mismo (ver conversationEngine.js → handleAskName), esto sí importa un
+// poco más que antes: si el proceso se reinicia justo entre "quiero
+// reservar" y que el huésped escriba su nombre, esa reservación en
+// specific se pierde y el huésped tendría que repetirla. Si esto se
+// vuelve un problema real, la solución es mover esto a Redis o a un
+// archivo/SQLite; el resto del código no cambia porque todo pasa por
+// getSession/saveSession.
 const SESSION_TTL_MS = 45 * 60 * 1000; // 45 min de inactividad = sesión nueva
 
 export const STATES = {
@@ -18,6 +20,7 @@ export const STATES = {
   ASK_CHECKIN: 'ASK_CHECKIN',
   ASK_CHECKOUT: 'ASK_CHECKOUT',
   CONFIRM_SUMMARY: 'CONFIRM_SUMMARY',
+  ASK_NAME: 'ASK_NAME',
   FAQ_MODE: 'FAQ_MODE',
 };
 

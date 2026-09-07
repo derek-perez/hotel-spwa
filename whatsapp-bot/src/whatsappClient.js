@@ -3,6 +3,9 @@ import https from 'https';
 import { config } from './config.js';
 
 const API_BASE = `https://graph.facebook.com/${config.whatsapp.apiVersion}/${config.whatsapp.phoneNumberId}`;
+// Base "sin número" — los endpoints de media (/{media-id}) cuelgan del
+// árbol general de la Graph API, no del phone_number_id.
+const GRAPH_BASE = `https://graph.facebook.com/${config.whatsapp.apiVersion}`;
 
 // httpsAgent con keepAlive:false — se probó como hipótesis (Meta respondía
 // 500 en los envíos con keep-alive) pero NO resolvió el error. Se deja
@@ -74,6 +77,33 @@ export function sendText(to, body) {
     type: 'text',
     text: { body, preview_url: false },
   });
+}
+
+// --- Descarga de archivos que mandan los huéspedes (fotos, documentos) ---
+//
+// El webhook entrante solo trae un "id" de media, no el archivo en sí. Hay
+// que resolverlo en dos pasos:
+//   1. GET /{media-id} (con el token) -> devuelve una URL temporal (~5 min)
+//      + mime_type.
+//   2. GET esa URL (TAMBIÉN con el token — si no, Meta responde 401) ->
+//      los bytes del archivo.
+// Se usa desde conversationEngine.js para reenviar el archivo por correo a
+// recepción (ver emailClient.js) en vez de perderlo como pasaba antes.
+export async function downloadMedia(mediaId) {
+  const { data: meta } = await axios.get(`${GRAPH_BASE}/${mediaId}`, {
+    headers: { Authorization: `Bearer ${config.whatsapp.token}` },
+    timeout: 10_000,
+  });
+  const { data: rawBuffer } = await axios.get(meta.url, {
+    headers: { Authorization: `Bearer ${config.whatsapp.token}` },
+    responseType: 'arraybuffer',
+    timeout: 20_000,
+  });
+  return {
+    buffer: Buffer.from(rawBuffer),
+    mimeType: meta.mime_type,
+    fileSize: meta.file_size,
+  };
 }
 
 // --- Alertas internas al staff/recepción ---
