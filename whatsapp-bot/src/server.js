@@ -3,7 +3,6 @@ import crypto from 'node:crypto';
 import { config } from './config.js';
 import { handleIncomingMessage } from './conversationEngine.js';
 import { markAsRead } from './whatsappClient.js';
-import { runDebugSend } from './debugSend.js';
 
 const app = express();
 
@@ -92,25 +91,6 @@ async function processWebhookPayload(body) {
     }
   }
 }
-
-// ⚠️ TEMPORAL — ruta de diagnóstico, ver debugSend.js. Protegida con el
-// mismo verifyToken del webhook (no expone un secreto nuevo). Borrar junto
-// con debugSend.js cuando se resuelva o se descarte esta pista.
-app.get('/debug/send-test', async (req, res) => {
-  if (req.query.key !== config.whatsapp.verifyToken) {
-    return res.sendStatus(404); // 404 en vez de 401/403 para no anunciar que la ruta existe
-  }
-  const to = req.query.to;
-  if (!to) {
-    return res.status(400).json({ error: 'Falta ?to=52XXXXXXXXXX (sin +, sin 1 después del 52)' });
-  }
-  try {
-    const result = await runDebugSend(to);
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 app.listen(config.port, () => {
   console.log(`🏨 Bot de Hotel Posada Cocomacan escuchando en el puerto ${config.port}`);
