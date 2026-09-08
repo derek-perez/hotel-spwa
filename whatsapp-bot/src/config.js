@@ -46,21 +46,23 @@ export const config = {
   // confirmada por el bot. No hay PMS ni hoja de cálculo todavía — este
   // correo (junto con el WhatsApp interno de notifyStaff) ES el sistema.
   //
-  // Configurado para el correo de Yahoo del hotel: smtp.mail.yahoo.com,
-  // puerto 465 (SSL). SMTP_PASS debe ser una "contraseña de aplicación"
-  // generada en la configuración de seguridad de la cuenta de Yahoo — NO la
-  // contraseña normal de la cuenta (Yahoo no la acepta para SMTP de
-  // terceros).
+  // Se manda por la API HTTP de Brevo (https://api.brevo.com), NO por SMTP
+  // directo — Render bloquea los puertos SMTP (25/465/587) en el plan
+  // gratuito desde sept. 2025, así que un envío por SMTP siempre truena por
+  // timeout ahí. La API de Brevo viaja por HTTPS (puerto 443), que sí está
+  // permitido.
+  //
+  // BREVO_SENDER_EMAIL debe estar verificado como "Single Sender" en Brevo
+  // (Settings → Senders — solo requiere confirmar un correo por link, no
+  // hace falta tener dominio propio). Sin esa verificación, Brevo rechaza
+  // el envío.
   email: {
-    host: process.env.SMTP_HOST || 'smtp.mail.yahoo.com',
-    port: Number(process.env.SMTP_PORT) || 465,
-    secure: process.env.SMTP_SECURE ? process.env.SMTP_SECURE === 'true' : true,
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-    // Por defecto llega al mismo buzón que manda el correo (un solo correo
-    // compartido para el hotel). Si algún día quieren separarlo, basta con
-    // fijar RECEPTION_EMAIL a otra dirección.
-    receptionEmail: process.env.RECEPTION_EMAIL || process.env.SMTP_USER,
+    apiKey: process.env.BREVO_API_KEY,
+    senderEmail: process.env.BREVO_SENDER_EMAIL,
+    senderName: process.env.BREVO_SENDER_NAME || 'Hotel Posada Cocomacan · Bot',
+    // Por defecto llega al mismo buzón que manda el correo. Si algún día
+    // quieren separarlo, basta con fijar RECEPTION_EMAIL a otra dirección.
+    receptionEmail: process.env.RECEPTION_EMAIL || process.env.BREVO_SENDER_EMAIL,
   },
   anthropic: {
     apiKey: required('ANTHROPIC_API_KEY'),

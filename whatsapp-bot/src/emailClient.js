@@ -7,49 +7,68 @@
 // correo a recepción (junto con el aviso por WhatsApp de notifyStaff en
 // whatsappClient.js) ES el registro. Recepción anota/gestiona desde ahí.
 //
+// Por qué API HTTP y no SMTP: Render bloquea los puertos SMTP (25/465/587)
+// en el plan gratuito desde sept. 2025 — cualquier intento de conectar por
+// SMTP directo (nodemailer, etc.) truena por timeout ahí. Brevo (antes
+// Sendinblue) manda el correo por su API sobre HTTPS (puerto 443, sin
+// bloquear), con un plan gratis de 300 correos/día — de sobra para esto.
+//
+// Requiere verificar BREVO_SENDER_EMAIL como "Single Sender" en Brevo
+// (Settings → Senders → Add a sender, confirmar por el link que llega a ese
+// correo). NO hace falta dominio propio del hotel para eso.
+//
 // Por diseño, nunca debe tronar el flujo del huésped si el correo falla —
-// igual que notifyStaff(), atrapa sus propios errores y nunca los propaga.
-import nodemailer from 'nodemailer';
+// atrapa sus propios errores y nunca los propaga.
+import axios from 'axios';
 import { config } from './config.js';
 
-let transporter = null;
+const BREVO_ENDPOINT = 'https://api.brevo.com/v3/smtp/email';
+
 let warnedMissingEmailConfig = false;
 
-function getTransporter() {
-  if (transporter) return transporter;
-  if (!config.email.host || !config.email.user || !config.email.pass) {
-    if (!warnedMissingEmailConfig) {
-      console.warn(
-        '⚠️  SMTP_HOST/SMTP_USER/SMTP_PASS no configurados — no se están mandando correos a recepción (documentos ni reservaciones).'
-      );
-      warnedMissingEmailConfig = true;
-    }
-    return null;
+function isConfigured() {
+  if (config.email.apiKey && config.email.senderEmail) return true;
+  if (!warnedMissingEmailConfig) {
+    console.warn(
+      '⚠️  BREVO_API_KEY/BREVO_SENDER_EMAIL no configurados — no se están mandando correos a recepción (documentos ni reservaciones).'
+    );
+    warnedMissingEmailConfig = true;
   }
-  transporter = nodemailer.createTransport({
-    host: config.email.host,
-    port: config.email.port,
-    secure: config.email.secure,
-    auth: { user: config.email.user, pass: config.email.pass },
-  });
-  return transporter;
+  return false;
 }
 
 async function sendMail({ subject, text, attachments }) {
   const to = config.email.receptionEmail;
   if (!to) return;
-  const t = getTransporter();
-  if (!t) return;
+  if (!isConfigured()) return;
+
+  const payload = {
+    sender: { email: config.email.senderEmail, name: config.email.senderName },
+    to: [{ email: to }],
+    subject,
+    textContent: text,
+    ...(attachments
+      ? {
+          attachment: attachments.map((a) => ({
+            name: a.filename,
+            content: a.content.toString('base64'),
+          })),
+        }
+      : {}),
+  };
+
   try {
-    await t.sendMail({
-      from: config.email.user,
-      to,
-      subject,
-      text,
-      ...(attachments ? { attachments } : {}),
+    await axios.post(BREVO_ENDPOINT, payload, {
+      headers: {
+        'api-key': config.email.apiKey,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      timeout: 15000,
     });
   } catch (err) {
-    console.error('❌ No se pudo mandar el correo a recepción:', err.message);
+    const detail = err.response?.data ? JSON.stringify(err.response.data) : err.message;
+    console.error('❌ No se pudo mandar el correo a recepción:', detail);
   }
 }
 
@@ -71,7 +90,7 @@ export async function sendGuestFileEmail({ phone, filename, mimeType, buffer, ca
   await sendMail({
     subject: `📎 ${kindLabel} de huésped por WhatsApp — ${phone}`,
     text: lines.join('\n'),
-    attachments: [{ filename, content: buffer, contentType: mimeType }],
+    attachments: [{ filename, content: buffer }],
   });
 }
 
