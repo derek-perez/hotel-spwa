@@ -15,7 +15,9 @@
     "policies": {
       "check_in": "1:00 PM",
       "check_out": "12:00 PM",
-      "pet_friendly": false
+      "pet_friendly": false,
+      "invoicing": true,
+      "invoicing_note": "El hotel emite factura (CFDI) a solicitud. Debe pedirse al momento de la reserva o durante el check-out."
     },
     "media": {
       "hero_image": "public/images/central_courtyard.jpg",
@@ -106,7 +108,7 @@
       "capacity": "1 - 2 Personas",
       "beds": "1 Cama King Size",
       "rates": [
-        { "guests": "1-2", "price_mxn": 1250 }
+        { "guests": "1-2", "price_mxn": "Consultar cotización" }
       ],
       "common_features": ["Espacio superior", "Wi-Fi", "Agua caliente", "Baño privado con regadera", "TV con cable", "Servicio de limpieza daily"],
       "image": "public/images/suite_entrance.jpg",
@@ -119,11 +121,19 @@
       "beds": "1 Cama King Size",
       "description": "La suite más amplia y exclusiva del hotel.",
       "rates": [
-        { "guests": "1-2", "price_mxn": 1400 }
+        { "guests": "1-2", "price_mxn": "Consultar cotización" }
       ],
       "common_features": ["Vista / Espacio premium", "Wi-Fi", "Agua caliente", "Baño privado con regadera", "TV con cable", "Servicio de limpieza daily"],
       "image": "public/images/suite_bed.jpg",
       "gallery": ["public/images/suite_bed.jpg", "public/images/suite_bathroom.jpg", "public/images/suite_image_1.jpg"]
+    }
+  ],
+  "blackout_dates": [
+    {
+      "start": "2026-09-14",
+      "end": "2026-09-16",
+      "note": "Sin disponibilidad — fechas patrias, alta demanda",
+      "room_type_ids": []
     }
   ],
   "location_highlights": [
