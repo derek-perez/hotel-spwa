@@ -40,6 +40,28 @@ export const config = {
       .map((n) => n.trim())
       .filter(Boolean),
   },
+  // Correo de recepción: a dónde llegan (a) los documentos/fotos que mandan
+  // los huéspedes por WhatsApp (Constancia de Situación Fiscal, recibos,
+  // etc. — antes se perdían) y (b) el registro de cada nueva reservación
+  // confirmada por el bot. No hay PMS ni hoja de cálculo todavía — este
+  // correo (junto con el WhatsApp interno de notifyStaff) ES el sistema.
+  //
+  // Configurado para el correo de Yahoo del hotel: smtp.mail.yahoo.com,
+  // puerto 465 (SSL). SMTP_PASS debe ser una "contraseña de aplicación"
+  // generada en la configuración de seguridad de la cuenta de Yahoo — NO la
+  // contraseña normal de la cuenta (Yahoo no la acepta para SMTP de
+  // terceros).
+  email: {
+    host: process.env.SMTP_HOST || 'smtp.mail.yahoo.com',
+    port: Number(process.env.SMTP_PORT) || 465,
+    secure: process.env.SMTP_SECURE ? process.env.SMTP_SECURE === 'true' : true,
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+    // Por defecto llega al mismo buzón que manda el correo (un solo correo
+    // compartido para el hotel). Si algún día quieren separarlo, basta con
+    // fijar RECEPTION_EMAIL a otra dirección.
+    receptionEmail: process.env.RECEPTION_EMAIL || process.env.SMTP_USER,
+  },
   anthropic: {
     apiKey: required('ANTHROPIC_API_KEY'),
     model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',

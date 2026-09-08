@@ -3,7 +3,9 @@ import { listRoomTypes, findRoomType } from './hotelData.js';
 import { computeQuote, guestsFitRoom, getCapacityRange, getOverallMaxCapacity } from './quoteEngine.js';
 import { parseFlexibleDate, isTodayOrFuture, isAfter, formatDateEs } from './dateUtils.js';
 import { answerFaq } from './faqEngine.js';
-import { sendText, sendList, sendButtons, notifyStaff } from './whatsappClient.js';
+import { sendText, sendList, sendButtons, notifyStaff, downloadMedia } from './whatsappClient.js';
+import { sendGuestFileEmail, sendReservationEmail } from './emailClient.js';
+import { alertStaff } from './staffAlerts.js';
 
 // ---------- helpers de texto ----------
 
@@ -17,6 +19,17 @@ function normalize(text) {
 
 function money(n) {
   return `$${n.toLocaleString('es-MX')} MXN`;
+}
+
+const MIME_EXTENSIONS = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+};
+
+function extensionForMime(mimeType) {
+  return MIME_EXTENSIONS[mimeType] || 'bin';
 }
 
 // ---------- mensaje pre-armado que manda el sitio web ----------
@@ -132,7 +145,7 @@ async function sendQuoteSummary(to, session) {
       to,
       `Justo para esas fechas (${checkInLabel} → ${checkOutLabel}) ya no tenemos disponibilidad 😕. Si gustas, escribe *agente* y el equipo del hotel te confirma fechas cercanas u otras opciones, o escribe *cotizar* para intentar con otras fechas.`
     );
-    await notifyStaff(
+    await alertStaff(
       `📅 Alguien preguntó por ${result.roomType.name} del ${checkInLabel} al ${checkOutLabel} — fechas marcadas SIN disponibilidad. Cliente: ${to}. Puede valer la pena ofrecerle alternativas directamente.`
     );
     resetSession(to);
@@ -194,11 +207,46 @@ async function handleGlobalCommand(to, command, session) {
       to,
       'Listo, un miembro del equipo de Hotel Posada Cocomacan revisará este chat y te contestará en breve. 🙌'
     );
-    await notifyStaff(`🙋 ${to} pidió hablar con un agente del hotel por WhatsApp.`);
+    await alertStaff(`🙋 ${to} pidió hablar con un agente del hotel por WhatsApp.`);
     resetSession(to);
     return true;
   }
   return false;
+}
+
+// ---------- archivos entrantes (fotos, documentos) ----------
+//
+// Antes CUALQUIER mensaje que no fuera texto o botón/lista se perdía por
+// completo — el bot solo respondía "no puedo leer esto" y el archivo (una
+// Constancia de Situación Fiscal, un comprobante de pago, una foto de un
+// recibo...) nunca llegaba a nadie. Ahora se reenvía por correo a
+// recepción (ver emailClient.js) con el archivo adjunto tal cual llegó.
+async function handleMediaMessage(to, message) {
+  const isDocument = message.type === 'document';
+  const media = isDocument ? message.document : message.image;
+
+  try {
+    const { buffer, mimeType } = await downloadMedia(media.id);
+    const filename =
+      isDocument && media.filename ? media.filename : `foto-${to}-${Date.now()}.${extensionForMime(mimeType)}`;
+
+    await sendGuestFileEmail({
+      phone: to,
+      filename,
+      mimeType,
+      buffer,
+      caption: media.caption,
+      kind: isDocument ? 'document' : 'image',
+    });
+
+    await sendText(to, 'Recibimos tu archivo, gracias 🙌. Ya se lo reenviamos al equipo de recepción del hotel.');
+  } catch (err) {
+    console.error('❌ Error procesando archivo entrante de WhatsApp:', err.response?.data || err.message);
+    await sendText(
+      to,
+      'Recibimos tu archivo pero tuvimos un problema técnico al procesarlo 😕. Intenta reenviarlo en un momento, o escribe *agente* para que el equipo del hotel te ayude directamente.'
+    );
+  }
 }
 
 // ---------- máquina de estados principal ----------
@@ -221,9 +269,17 @@ export async function handleIncomingMessage(to, message) {
       interactiveId = interactive.button_reply.id;
       text = interactive.button_reply.title;
     }
+  } else if (message.type === 'image' || message.type === 'document') {
+    // Fotos y documentos (Constancia de Situación Fiscal, recibos, etc.):
+    // se reenvían por correo a recepción, sin tocar el estado de la
+    // conversación — el huésped puede seguir donde iba después.
+    return handleMediaMessage(to, message);
   } else {
-    // audio, imagen, sticker, ubicación, etc. — no soportado en v1.
-    await sendText(to, 'Por ahora solo puedo leer mensajes de texto o los botones del menú 🙂. Escribe *menú* para empezar.');
+    // audio, sticker, ubicación, video, contactos, etc. — no soportado en v1.
+    await sendText(
+      to,
+      'Por ahora solo puedo leer mensajes de texto, fotos, documentos o los botones del menú 🙂. Escribe *menú* para empezar.'
+    );
     return;
   }
 
@@ -250,6 +306,8 @@ export async function handleIncomingMessage(to, message) {
       return handleAskCheckOut(to, session, { text });
     case STATES.CONFIRM_SUMMARY:
       return handleConfirmSummary(to, session, { interactiveId });
+    case STATES.ASK_NAME:
+      return handleAskName(to, session, { text });
     case STATES.FAQ_MODE:
       return handleFaqMode(to, session, { text });
     default:
@@ -271,7 +329,7 @@ async function handleMainMenu(to, session, { interactiveId, text, normalized }) 
   }
   if (interactiveId === 'menu_agente') {
     await sendText(to, 'Listo, un miembro del equipo del hotel te contestará por este mismo chat en breve. 🙌');
-    await notifyStaff(`🙋 ${to} pidió hablar con un agente del hotel por WhatsApp.`);
+    await alertStaff(`🙋 ${to} pidió hablar con un agente del hotel por WhatsApp.`);
     resetSession(to);
     return;
   }
@@ -379,7 +437,7 @@ async function handleAskGuests(to, session, { normalized }) {
       to,
       `Para ${guests} personas normalmente combinamos varias habitaciones para acomodar a todo el grupo 🙂. Escribe *agente* y el equipo del hotel te arma la mejor combinación y el precio total.`
     );
-    await notifyStaff(
+    await alertStaff(
       `👥 Grupo grande: ${to} preguntó por ${guests} huéspedes (partió de ${roomType.name}) — necesita combinar varias habitaciones, seguimiento manual.`
     );
     resetSession(to);
@@ -432,19 +490,9 @@ async function handleAskCheckOut(to, session, { text }) {
 
 async function handleConfirmSummary(to, session, { interactiveId }) {
   if (interactiveId === 'confirm_reservar') {
-    const { roomTypeId, guests, checkIn, checkOut } = session.data;
-    const roomType = findRoomType(roomTypeId);
-    const resumen = roomType
-      ? `${roomType.name} · ${guests} huésped(es) · ${formatDateEs(new Date(checkIn))} → ${formatDateEs(new Date(checkOut))}`
-      : 'detalles no disponibles';
-
-    await sendText(
-      to,
-      '¡Excelente! 🎉 Un miembro del equipo de Hotel Posada Cocomacan confirmará disponibilidad y te contactará por este mismo chat para completar tu reserva.'
-    );
-    await notifyStaff(`✅ Nueva solicitud de reservación\nCliente: ${to}\n${resumen}\n\nContáctalo por este mismo WhatsApp para confirmar y cerrar.`);
-    resetSession(to);
-    return;
+    session.state = STATES.ASK_NAME;
+    saveSession(to, session);
+    return sendText(to, '¡Perfecto! ¿A nombre de quién hacemos la reservación? Escribe el nombre completo.');
   }
   if (interactiveId === 'confirm_otra') {
     session.state = STATES.ASK_ROOM_TYPE;
@@ -458,6 +506,63 @@ async function handleConfirmSummary(to, session, { interactiveId }) {
   }
 
   return sendText(to, 'Puedes tocar uno de los botones de arriba, o escribir *menú* para empezar de nuevo.');
+}
+
+// Último paso del flujo de reservación: pedir el nombre y, con eso, cerrar
+// la reservación por completo — le confirmamos al huésped que su
+// habitación quedó reservada Y se lo mandamos a recepción por WhatsApp
+// (notifyStaff) y por correo (sendReservationEmail), que es "el sistema"
+// mientras el hotel no tenga uno propio (PMS/hoja de cálculo).
+//
+// OJO — esto es una decisión explícita del hotel, no un supuesto mío: el
+// bot NO verifica disponibilidad real más allá de las fechas bloqueadas a
+// mano en hotel-data.json (no lleva inventario/ocupación por habitación).
+// Por eso el correo y el WhatsApp a recepción insisten en verificar antes
+// de darla por completamente cerrada.
+async function handleAskName(to, session, { text }) {
+  const name = String(text || '').trim();
+  if (name.length < 3 || /^\d+$/.test(name)) {
+    return sendText(to, 'No logré leer bien el nombre 🙈. ¿Me confirmas el nombre completo para la reservación?');
+  }
+
+  const { roomTypeId, guests, checkIn, checkOut } = session.data;
+  const roomType = findRoomType(roomTypeId);
+
+  if (!roomType || !checkIn || !checkOut) {
+    // Sesión incompleta/corrupta (p.ej. el servidor se reinició a medias) —
+    // mejor reiniciar que confirmar una reservación con datos a medias.
+    await sendText(to, 'Se me perdió parte de tu cotización 😕. Empecemos de nuevo para no equivocarnos con tus datos.');
+    resetSession(to);
+    return sendMainMenu(to);
+  }
+
+  const result = computeQuote({ roomTypeId, guests, checkIn: new Date(checkIn), checkOut: new Date(checkOut) });
+  const checkInLabel = formatDateEs(new Date(checkIn));
+  const checkOutLabel = formatDateEs(new Date(checkOut));
+  const priceLine = result.ok && !result.needsManualQuote ? money(result.total) : 'a confirmar por el equipo';
+  const nights = result.ok ? result.nights : null;
+
+  await sendText(
+    to,
+    `¡Listo, ${name}! ✅ Tu habitación ha quedado reservada:\n*${roomType.name}* · ${guests} huésped(es)\n${checkInLabel} → ${checkOutLabel}\nTotal: ${priceLine}\n\nEl equipo de Hotel Posada Cocomacan te contactará por este mismo chat para confirmar el pago y cualquier detalle final.`
+  );
+
+  await notifyStaff(
+    `✅ Reservación confirmada por el bot\nNombre: ${name}\nTeléfono: ${to}\n${roomType.name} · ${guests} huésped(es)\n${checkInLabel} → ${checkOutLabel}\nTotal: ${priceLine}\n\nVerifica disponibilidad real y contacta al huésped para cerrar pago/detalles.`
+  );
+
+  await sendReservationEmail({
+    guestName: name,
+    phone: to,
+    roomTypeName: roomType.name,
+    guests,
+    checkInLabel,
+    checkOutLabel,
+    nights,
+    priceLine,
+  });
+
+  resetSession(to);
 }
 
 async function handleFaqMode(to, session, { text }) {
