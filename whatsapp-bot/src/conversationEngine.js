@@ -205,9 +205,9 @@ async function handleGlobalCommand(to, command, session) {
   if (command === 'AGENT') {
     await sendText(
       to,
-      'Listo, un miembro del equipo de Hotel Posada Cocomacan revisará este chat y te contestará en breve. 🙌'
+      'Listo, ya avisamos a recepción 🙌. En breve te llamamos por teléfono a este mismo número para ayudarte — no por este chat.'
     );
-    await alertStaff(`🙋 ${to} pidió hablar con un agente del hotel por WhatsApp.`);
+    await alertStaff(`🙋 ${to} pidió hablar con un agente del hotel por WhatsApp. Llámale a este número.`);
     resetSession(to);
     return true;
   }
@@ -328,8 +328,8 @@ async function handleMainMenu(to, session, { interactiveId, text, normalized }) 
     return sendText(to, 'Claro, pregúntame lo que quieras sobre el hotel (habitaciones, ubicación, amenidades, políticas...).');
   }
   if (interactiveId === 'menu_agente') {
-    await sendText(to, 'Listo, un miembro del equipo del hotel te contestará por este mismo chat en breve. 🙌');
-    await alertStaff(`🙋 ${to} pidió hablar con un agente del hotel por WhatsApp.`);
+    await sendText(to, 'Listo, ya avisamos a recepción 🙌. En breve te llamamos por teléfono a este mismo número para ayudarte — no por este chat.');
+    await alertStaff(`🙋 ${to} pidió hablar con un agente del hotel por WhatsApp. Llámale a este número.`);
     resetSession(to);
     return;
   }
